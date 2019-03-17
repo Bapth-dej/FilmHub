@@ -2,9 +2,11 @@ package com.example.filmhub;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -32,29 +34,25 @@ import org.json.JSONArray;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
-
-public class FilmActivity extends AppCompatActivity {
+public class FilmActivity extends Fragment {
 
     static final String TAG = "MonTag";
 
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private CollectionReference ref;//= db.collection("Films").document("7FGtyF0zAAnAwCBvK7uD").collection("Review");
     private String id;
+    View v;
     private ReviewAdapter adapter;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        FirebaseApp.initializeApp(this);
 
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_movie_review);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstance ){
+        super.onCreate(savedInstance);
 
-        Intent i = getIntent();
-        Bundle bundle = getIntent().getExtras();
-        if (i != null){
+        v = inflater.inflate(R.layout.activity_movie_review,container,false);
+
+        final Bundle bundle = this.getArguments();
+
+        if (bundle != null){
 
             String nomFilm;
             String realisateur;
@@ -64,7 +62,6 @@ public class FilmActivity extends AppCompatActivity {
             String pays;
             String imageFilm;
             float note;
-            if (i.hasExtra("film")) {
                 Log.d(TAG,"recup film");
                 Films film = bundle.getParcelable("film");
                 nomFilm = film.getNomFilm();
@@ -75,45 +72,56 @@ public class FilmActivity extends AppCompatActivity {
                 pays = film.getPays();
                 imageFilm = film.getImageFilm();
                 note = film.getNote();
-                TextView film_titreTextView = (TextView) findViewById(R.id.film_titre);
+                TextView film_titreTextView = (TextView) v.findViewById(R.id.film_titre);
                 film_titreTextView.setText(nomFilm);
-                TextView film_realisateurTextView = (TextView) findViewById(R.id.film_realisateur);
+                TextView film_realisateurTextView = (TextView) v.findViewById(R.id.film_realisateur);
                 film_realisateurTextView.setText(realisateur);
-                TextView film_genreTextView = (TextView) findViewById(R.id.film_genre);
+                TextView film_genreTextView = (TextView) v.findViewById(R.id.film_genre);
                 film_genreTextView.setText(genre);
-                TextView film_anneeTextView = (TextView) findViewById(R.id.film_annee);
+                TextView film_anneeTextView = (TextView) v.findViewById(R.id.film_annee);
                 film_anneeTextView.setText(""+annee);
-                TextView film_descriptionTextView = (TextView) findViewById(R.id.film_description);
+                TextView film_descriptionTextView = (TextView) v.findViewById(R.id.film_description);
                 film_descriptionTextView.setText(description);
-                TextView film_paysTextView = (TextView) findViewById(R.id.film_pays);
+                TextView film_paysTextView = (TextView) v.findViewById(R.id.film_pays);
                 film_paysTextView.setText(pays);
-                ImageView film_afficheImageView = (ImageView) findViewById(R.id.film_affiche);
+                ImageView film_afficheImageView = (ImageView) v.findViewById(R.id.film_affiche);
                 Picasso.get().load(imageFilm).into(film_afficheImageView);
-                RatingBar ratingBar = findViewById(R.id.film_noteGlobale);
+                RatingBar ratingBar = v.findViewById(R.id.film_noteGlobale);
                 ratingBar.setRating(note);
-            }
 
-            if (i.hasExtra("id")) {
                 Log.d(TAG, "recup id");
                 id = bundle.getString("id");
-            }
+
 
         }
 
-        Button button = findViewById(R.id.film_bouton_ecrire_review);
+        final Button button = v.findViewById(R.id.film_bouton_ecrire_review);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Log.d(TAG,"Touched ecrire une review");
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show();
-                //Intent i = new Intent(MainActivity.this, FilmActivity.class);
-                //Log.d(TAG,"Go to film reviews");
-                //startActivity(i);
+                AddReview newFrag = new AddReview();
+                Bundle bundleReview = new Bundle();
+                newFrag.setArguments(bundleReview);
+
+                Films film = bundle.getParcelable("film");
+
+                bundleReview.putString("nomFilm", film.getNomFilm());
+                bundleReview.putString("description", film.getDescription());
+                bundleReview.putString("image", film.getImageFilm());
+                bundleReview.putString("id", bundle.getString("id"));
+
+                FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
+                fragmentTransaction.replace(R.id.fragment_container, newFrag);
+                fragmentTransaction.addToBackStack(null);
+                fragmentTransaction.commit();
+
             }
         });
-
         setUpRecyclerView();
+
+        return v;
+
     }
 
     private void setUpRecyclerView(){
@@ -126,9 +134,9 @@ public class FilmActivity extends AppCompatActivity {
         adapter = new ReviewAdapter(options);
         adapter.startListening();
         adapter.notifyDataSetChanged();
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.ReviewFilmRecyclerView);
+        RecyclerView recyclerView = (RecyclerView) v.findViewById(R.id.ReviewFilmRecyclerView);
         recyclerView.setHasFixedSize(false);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(adapter);
 
     }

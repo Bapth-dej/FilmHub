@@ -16,8 +16,13 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -33,48 +38,40 @@ public class ProfileActivity extends Fragment {
 
     @Nullable
     JSONArray jsonArray = new JSONArray();
-    public TextView list;
+    public TextView nomUtilisateur;
     private List<Reviews> userReviews;
-
+    private FirebaseAuth mAuth;
+    private View v;
+    private CollectionReference ref;
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstance) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         super.onCreate(savedInstance);
-
-        /*  PART FOR FRAGMENT EDIT PROFILE BUTTON
-
-        buttonEditProfile = getView().findViewById(R.id.buttonEdit);
-        buttonEditProfile.setOnClickListener(new View.OnClickListener(){
+        v = inflater.inflate(R.layout.activity_profile, container, false);
+        mAuth = FirebaseAuth.getInstance();
+        nomUtilisateur = v.findViewById(R.id.nomUtilisateurProfil);
+        nomUtilisateur.setText(mAuth.getCurrentUser().getEmail());
+        ref = db.collection("Utilisateurs");
+        ref.whereEqualTo("adresseEmail", mAuth.getCurrentUser().getEmail()).get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
             @Override
-            public void onClick(View v){
-                getFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new ProfileActivity()).commit();
-            }
-        });*/
 
-        /* get datas from FireBase part*/
-
-        db.collection("Commentaires")
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            JSONArray jsonArray = new JSONArray();
-
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                //Log.d(TAG, document.getId() + " => " + document.getData());
-                                jsonArray.put(document.getData());
-                            }
-                        } else {
-                            Log.d(TAG, "Error getting documents.", task.getException());
-                        }
-
+                public void onSuccess (QuerySnapshot queryDocumentSnapshots){
+                String id = "";
+                for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
+                        Log.d("holi", documentSnapshot.getId());
+                        id += "ID +" +documentSnapshot.getId();
+                        getReviews(id);
                     }
 
-                });
+            }
 
+            });
+        return v;
 
-        return inflater.inflate(R.layout.activity_profile, container, false);
+    }
+    void getReviews(String document){
+        //Aqui ya obtenemos el ID del usuario :D
+        //nomUtilisateur.setText(data);
+
 
     }
 }
